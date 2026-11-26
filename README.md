@@ -1,0 +1,23 @@
+# kriasetup
+
+Fixes, setup notes and maintenance procedures for an AMD/Xilinx **Kria KR260** robotics starter kit
+running Ubuntu 22.04 (kernel `xilinx-zynqmp`, GNOME on X11).
+
+## Contents
+
+| Doc | Topic |
+|---|---|
+| [docs/changelog.md](docs/changelog.md) | **Every change made to the board**: what, why, how to check it's still needed, how to remove it |
+| [docs/display.md](docs/display.md) | DisplayPort: 1024x768 limit (single lane), no signal after screen blank |
+| [docs/firmware-updates.md](docs/firmware-updates.md) | How boot firmware, OS boot files, kernel/packages and PL apps are updated |
+
+## Installed on the board
+
+| What | Where | Why |
+|---|---|---|
+| `dp-wake-fix` user service | `~/.local/bin/dp-wake-fix`, `~/.config/systemd/user/dp-wake-fix.service` | Restores the picture after the screen blanks |
+| gsettings: idle suspend off | `org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'` | Avoid suspend and resume failures |
+
+## After a kernel or firmware update
+1. Check `docs/changelog.md` → each workaround's "Is it still needed?" section.
+2. Record the update in `docs/changelog.md`.
