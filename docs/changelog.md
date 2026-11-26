@@ -32,6 +32,8 @@ retries. The monitor has no setting to disable deep sleep. Reproduced on purpose
 | `~/.config/systemd/user/dp-wake-fix.service` | User service, enabled, starts with the graphical session |
 | `~/.config/systemd/user/graphical-session.target.wants/dp-wake-fix.service` | Symlink created by `systemctl --user enable` |
 
+Source copies and installer: `files/dp-wake-fix/` (`install.sh` reinstalls and enables it).
+
 **Verified:** forced DPMS off for 25 s then woke it; the service recovered the picture on the first attempt about 5 s after wake.
 Confirmed in real use: after a normal idle blank, moving the mouse woke the display
 (service log at 19:01:55, retrained on attempt 1).

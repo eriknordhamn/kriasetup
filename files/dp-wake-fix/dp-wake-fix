@@ -1,0 +1,31 @@
+#!/bin/bash
+# Workaround for KR260 zynqmp_dp: after DPMS wake the DP link training can fail
+# (monitor still in deep sleep) and the driver never retries -> "no signal".
+# Watches the kernel log for that error and cycles the output to retrain the link.
+# Docs: ~/Development/kriasetup/docs/display.md
+export DISPLAY="${DISPLAY:-:1}"
+OUT=DP-1
+COOLDOWN=10   # seconds; ignore errors caused by our own retrain attempt
+last=0
+
+journalctl -k -f -n0 -o cat | grep --line-buffered "failed to train the DP link" |
+while read -r _; do
+    now=$(date +%s)
+    (( now - last < COOLDOWN )) && continue
+    last=$now
+    mode=$(xrandr | awk -v o="$OUT" '$1==o{f=1;next} f&&/^[^ ]/{exit} f&&/\*/{print $1; exit}')
+    echo "DP link training failed; retraining $OUT (mode ${mode:-auto})"
+    for attempt in 1 2 3; do
+        sleep 1
+        xrandr --output "$OUT" --off
+        sleep 2
+        if [ -n "$mode" ]; then xrandr --output "$OUT" --mode "$mode"; else xrandr --output "$OUT" --auto; fi
+        sleep 2
+        # Success if no new training error since we started this attempt
+        if ! journalctl -k --since "-4s" -o cat --no-pager | grep -q "failed to train the DP link"; then
+            echo "retrained on attempt $attempt"; break
+        fi
+        echo "attempt $attempt failed, retrying"
+    done
+    last=$(date +%s)
+done

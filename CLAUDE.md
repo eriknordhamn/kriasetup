@@ -28,6 +28,8 @@ Read `docs/firmware-updates.md` before any update task.
   explicit go-ahead and a KR260-specific `BOOT.BIN` they provided or approved. Record
   `sudo xmutil bootfw_status` before and after. `fwupd` sees no devices here and isn't used.
 - After any fix or experiment, update the relevant `docs/*.md` with the result and the revert steps.
+- Keep a copy of every file installed outside this repo in `files/<fix-name>/`, with an
+  `install.sh`. Keep the copies identical to what's installed on the board.
 - Log every system change (files installed, services, settings) in `docs/changelog.md`,
   newest first: what, why, how it was verified, how to check it's still needed, and how to remove it.
 - Installed workarounds to review after kernel or firmware updates: `dp-wake-fix` user service
