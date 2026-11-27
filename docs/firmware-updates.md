@@ -22,24 +22,23 @@ which one boots. There is also a separate Recovery Image. (`cat /proc/mtd` shows
 An update is written to the **inactive** slot. The new slot boots once on trial and must be marked good,
 or the board falls back to the old slot. That makes a bad update recoverable.
 
-### State on this board (2026-11-26)
+### State on this board (2026-11-27)
 ```
 Image A: Bootable
 Image B: Bootable
-Requested Boot Image: Image A
-Last Booted Image: Image A
+Requested Boot Image: Image B
+Last Booted Image: Image B
 XilinxSom_QspiImage-k26-v2.1-06140636
 ImageA Revision Info: k26-smk-kr-sdt-v1.08-20261107132709
 ImageB Revision Info: k26-smk-v1.04-20250410071436
 ```
-- **Image A** is active and validated: v1.08, KR260-specific (`smk-kr`), built 2026-11-07.
-- **Image B** is the fallback: older v1.04 (2025-04-10), generic K26 starter kit build.
-- The next `bootfw_update -i` writes to **Image B**, the inactive slot, replacing v1.04. A stays as the fallback.
-  v1.04 is the last image known to run PYNQ buffer allocation on this board, so don't overwrite it
-  yet. See "Which firmware for Ubuntu 22.04 + PYNQ" below.
-- **2026-11-27:** Requested Boot Image set to **B** with the recovery tool (no flashing).
-  The status above is from before the switch. Replace it once `bootfw_status` confirms the switch.
-  See `docs/changelog.md`.
+- **Image B** (v1.04, generic K26 starter kit build, 2025-04-10) is active. It was selected with
+  the Boot Image Recovery Tool on 2026-11-27 (nothing flashed). PYNQ `allocate()` works on it
+  (`kr260intro` step 05 PASS).
+- **Image A** (v1.08, KR260 `smk-kr` SDT build, 2026-11-07) is inactive: PYNQ buffer allocation
+  fails on it.
+- The next `bootfw_update -i` now writes to **Image A**, replacing v1.08. v1.04 in B is safe.
+- Before 2026-11-27, A was requested and active. See `docs/changelog.md`.
 
 ### Check the current state
 ```sh
@@ -114,8 +113,8 @@ Source: AMD's "Kria SOMs & Starter Kits" wiki, snapshot 2026-11-27 in
 `references/Kria_SOMs_Starter_Kits-271126-155240.pdf`.
 
 **Problem seen here:** on v1.08 (Image A), `pynq.allocate()` fails, so `kr260intro` step 05
-no longer runs. The same Ubuntu 22.04 Desktop install ran step 05 fine on v1.04.
-Root cause not confirmed yet (see "Likely mechanism" below).
+no longer runs. **Confirmed 2026-11-27:** switching back to v1.04 (Image B) with no other change
+makes step 05 pass again. The mechanism is still not known (see "Likely mechanism" below).
 
 **What AMD's page says:**
 | Version | Code base / flow | Notes |

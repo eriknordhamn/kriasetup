@@ -5,7 +5,7 @@ Details and background: `docs/display.md`.
 
 ---
 
-## 2026-11-27: Requested boot image switched from A (v1.08) to B (v1.04) — verification pending
+## 2026-11-27: Requested boot image switched from A (v1.08) to B (v1.04)
 
 **Problem:** on boot FW v1.08 (Image A), `pynq.allocate()` fails, so `kr260intro` step 05
 (`sw/step05_linear_layer/linear_layer_test.py`) no longer runs. The same Ubuntu 22.04 install ran
@@ -37,7 +37,39 @@ cd ~/kr260intro/sw/step05_linear_layer && ./run_pynq.sh linear_layer_test.py
 ```
 The UART should show `MultiBootOffset: 0x1F0` (Image B) during boot. Also check that a second
 reboot still boots B without `bootfw_update -v`.
-Result: _to be filled in_.
+**Result (verified 2026-11-27): v1.04 fixes it; the firmware is confirmed as the cause.**
+```
+$ sudo xmutil bootfw_status
+Image A: Bootable
+Image B: Bootable
+Requested Boot Image: Image B
+Last Booted Image: Image B
+XilinxSom_QspiImage-k26-v2.1-06140636
+ImageA Revision Info: k26-smk-kr-sdt-v1.08-20261107132709
+ImageB Revision Info: k26-smk-v1.04-20250410071436
+
+$ cat /proc/cmdline
+ root=LABEL=writable rootwait earlycon console=ttyPS1,115200 console=tty1 clk_ignore_unused uio_pdrv_genirq.of_id=generic-uio xilinx_tsn_ep.st_pcp=4 cma=1000M
+$ grep -i cma /proc/meminfo
+CmaTotal:        1024000 kB
+CmaFree:          140828 kB      (117792–140828 kB across three reads)
+$ lsmod | grep zocl
+zocl                  204800  1
+
+~/step05$ ./run_pynq.sh linear_layer_test.py
+Overlay loaded successfully.
+IP cores in overlay: ['axi_dma_0', 'zynq_ultra_ps_e_0']
+... 11 cases PASS (minimal … max vector N=4096) ...
+Step 05 PASS
+```
+On the board, the step 05 files are in `~/step05/`, not a `kr260intro` checkout.
+
+Not checked yet:
+- The same numbers on v1.08 (`cmdline`, `CmaTotal`/`CmaFree`, `zocl`, the exact `allocate()`
+  error). Without them, the mechanism is still a guess.
+- Whether B stays selected after a second reboot without `bootfw_update -v`.
+- Only ~120–140 MB of the 1000 MB CMA pool is free, even on v1.04. Worth knowing before
+  allocating large buffers.
 
 ### Is it still needed?
 Keep booting B for as long as v1.08 breaks PYNQ buffer allocation on Ubuntu 22.04. Look again
