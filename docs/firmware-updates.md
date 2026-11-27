@@ -76,12 +76,17 @@ Needs root: without it, it fails with `Open Qspi MTD partition failed`.
 A web app stored in QSPI, separate from slots A and B. It can upload a `BOOT.BIN` into either
 slot, set each slot's Bootable flag, and choose the **Requested Boot Image**. That last option
 switches slots without flashing anything. Source: AMD wiki snapshot in `references/`, p. 27–28.
-Not yet tried on this board.
+Reached on this board 2026-11-27 (J10C, Windows PC, 100 Mbps forced on the PC side).
 
 1. Connect the PC to the KR260's **J10C** Ethernet port (GEM1). The other three ports don't work
    for recovery.
-2. Give the PC a static address on 192.168.0.x/24, anything except `.111`.
-3. Optional: open the serial console (micro-USB UART) to watch. The tool prints its IP there.
+2. Give the PC a static address on 192.168.0.x/24, anything except `.111`. No gateway.
+   **Set the PC adapter to 100 Mbps Full Duplex.** With auto-negotiation (and 1 Gbps), the
+   tool printed an auto-negotiation error on the UART and the link never came up. On Windows:
+   Device Manager → Network adapters → adapter → Properties → Advanced → Speed & Duplex.
+   Set it back to Auto Negotiation afterwards.
+3. Open the serial console (micro-USB UART, 115200 8N1, usually the second of the new COM
+   ports; Windows needs PuTTY or Tera Term). The tool prints its IP and link errors there.
 4. With the board off, hold the **FWUEN** (firmware update) button and power on.
 5. In a browser, open `http://192.168.0.111`. **Boot Image Status** shows the same A/B
    information as `bootfw_status`.
