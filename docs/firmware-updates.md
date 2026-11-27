@@ -35,6 +35,8 @@ ImageB Revision Info: k26-smk-v1.04-20250410071436
 - **Image A** is active and validated: v1.08, KR260-specific (`smk-kr`), built 2026-11-07.
 - **Image B** is the fallback: older v1.04 (2025-04-10), generic K26 starter kit build.
 - The next `bootfw_update -i` writes to **Image B**, the inactive slot, replacing v1.04. A stays as the fallback.
+  v1.04 is the last image known to run PYNQ buffer allocation on this board, so don't overwrite it
+  yet. See "Which firmware for Ubuntu 22.04 + PYNQ" below.
 
 ### Check the current state
 ```sh
@@ -76,6 +78,60 @@ Needs root: without it, it fails with `Open Qspi MTD partition failed`.
 ### Precautions
 - Don't cut power during step 2.
 - Record the before and after `xmutil bootfw_status` output in `docs/changelog.md`.
+
+### Which firmware for Ubuntu 22.04 + PYNQ
+Source: AMD's "Kria SOMs & Starter Kits" wiki, snapshot 2026-11-27 in
+`references/Kria_SOMs_Starter_Kits-271126-155240.pdf`.
+
+**Problem seen here:** on v1.08 (Image A), `pynq.allocate()` fails, so `kr260intro` step 05
+no longer runs. The same Ubuntu 22.04 Desktop install ran step 05 fine on v1.04.
+Root cause not confirmed yet (see "Likely mechanism" below).
+
+**What AMD's page says:**
+| Version | Code base / flow | Notes |
+|---|---|---|
+| 2022.1, 2022.2 | PetaLinux, legacy versioning | 2022.1 is the minimum for Ubuntu 22.04 (KR260 USB2.0 on U46, PS Ethernet J10C) |
+| 1.01, 1.02 | Yocto, 2023.2 | Last versions listed for Ubuntu 22.04 Desktop with no caveat |
+| 1.04 | Yocto, 2024.2 | Excluded for Ubuntu 22.04 Desktop ("2022.1 or later, except bootfw 1.04"). Listed issue is DP only: no DP on first boot under 22.04 (fixed by updating packages) and with EDF 2025.1 images |
+| 1.05, 1.06 | SDT flow, EDF distro, 2025.1–2025.2 | No statement on Ubuntu 22.04 |
+| 1.07, 1.08 | SDT, EDF, 2026.x "flat" | One fixed image per kit (`smk-kr` = KR260). AMD's 2026.1 WIC images *require* these |
+
+Ubuntu Server 24.04 is listed as working with 1.02 or later.
+
+**Background (why the new builds differ):**
+- 2024.2 added the SDT (system device tree) build flow next to XSCT; from 2025.1 SDT is the
+  only flow. That's the `sdt` in `k26-smk-kr-sdt-v1.08-…`.
+- From 1.06 the firmware is built with AMD's EDF Yocto distro (AMD images log in as `amd-edf`
+  instead of `petalinux`).
+- From 2026.1 boot firmware is "flat": a fixed image per starter kit instead of one image per
+  SOM that detects the carrier board at boot.
+
+**Likely mechanism (inference, not verified):** Ubuntu 22.04's boot scripts and PYNQ's
+device-tree overlay (`insert_dtbo.py`) were made for what the older firmware hands to Linux.
+The flat SDT image may hand over a different reserved-memory/CMA layout or `zocl` setup, so the PL
+loads but buffer allocation fails. To check, compare on both firmwares:
+```sh
+cat /proc/cmdline
+grep -i cma /proc/meminfo
+lsmod | grep zocl
+ls /sys/kernel/config/device-tree/overlays/
+sudo dmesg | grep -i -e cma -e zocl -e "reserved mem"
+```
+
+**Recommendation:** use a firmware from before the SDT change. In practice that's v1.04, which is
+proven on this board. If you want a version AMD lists for 22.04 with no caveat, use v1.02.
+1. Don't run `bootfw_update -i` while A (v1.08) is active: it writes to B and destroys v1.04.
+2. Boot Image B (v1.04). `xmutil` has no slot-select command; use the Image Recovery tool.
+   Then mark it good with `sudo xmutil bootfw_update -v`.
+3. Rerun step 05. If it passes, the firmware is confirmed as the cause.
+4. Optional: flash v1.02 with `bootfw_update -i`. It goes into A and overwrites v1.08, leaving
+   two pre-SDT images.
+5. Before downloading from AMD, check the Ubuntu-packaged firmware:
+   `sudo add-apt-repository ppa:ubuntu-xilinx/default && apt show kria-k26-bootfw`.
+   The page doesn't say which version it is.
+
+Alternative: move to Ubuntu 24.04 (supported with 1.02 or later), at the cost of reinstalling
+PYNQ and the workarounds in `docs/changelog.md`.
 
 ---
 
