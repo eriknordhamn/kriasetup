@@ -34,6 +34,9 @@ Notes:
 
 ### Blocker: no CMA, 1360x768 buffers fail to allocate (found 2026-11-27)
 
+**Resolved by booting Image B (v1.04)**, where CMA is reserved again; it returns if Image A (v1.08) is booted.
+It also stops PL bitstreams from loading and crashes GNOME apps. See `docs/cma.md`.
+
 During the 1360x768 test the X log showed, at the switch (10:34:39) and again at the revert (10:36:10):
 `_CREATE_GEM({height: 768, width: 1360, bpp: 32 ...}) failed. errno: 12 - Cannot allocate memory`.
 The desktop-icons extension (DING) then crashed with `BadAlloc`. The picture itself worked: the X screen is 16 bpp,
