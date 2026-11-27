@@ -78,7 +78,15 @@ Needs root: without it, it fails with `Open Qspi MTD partition failed`.
 A web app stored in QSPI, separate from slots A and B. It can upload a `BOOT.BIN` into either
 slot, set each slot's Bootable flag, and choose the **Requested Boot Image**. That last option
 switches slots without flashing anything. Source: AMD wiki snapshot in `references/`, p. 27–28.
-Reached on this board 2026-11-27 (J10C, Windows PC, 100 Mbps forced on the PC side).
+Reached on this board 2026-11-27 (J10C, the desktop PC, 100 Mbps forced on the PC side).
+
+**PC requirements:** an Ethernet port that can be forced to 100 Mbps Full Duplex, and a USB
+port for the UART. The **desktop PC** (Windows) is currently the only PC here with a built-in
+Ethernet jack, so it's the only proven way into the recovery tool. Backups, not yet tested:
+- A USB-to-Ethernet adapter on any PC. Pick one whose driver allows forcing 100 Mbps Full
+  Duplex (Properties → Advanced → Speed & Duplex). Most Realtek and ASIX adapters do.
+- A small switch between the PC and J10C. The switch handles the link negotiation that failed
+  on a direct connection, so the speed may not need forcing.
 
 1. Connect the PC to the KR260's **J10C** Ethernet port (GEM1). The other three ports don't work
    for recovery.

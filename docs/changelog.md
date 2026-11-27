@@ -18,7 +18,7 @@ checked. Details: `docs/firmware-updates.md` → "Which firmware for Ubuntu 22.0
 
 **What was done:**
 1. Saved AMD's "Kria SOMs & Starter Kits" wiki page in `references/` (snapshot 2026-11-27).
-2. Started the Boot Image Recovery Tool: PC on J10C, PC static IP 192.168.0.x/24, FWUEN held at
+2. Started the Boot Image Recovery Tool: the desktop PC on J10C, PC static IP 192.168.0.x/24, FWUEN held at
    power-on, UART on the second USB COM port at 115200 (PuTTY on Windows).
    - First try: auto-negotiation error on the UART, no link.
    - **Fixed by forcing the PC's Ethernet adapter to 100 Mbps Full Duplex.**
