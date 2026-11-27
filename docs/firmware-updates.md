@@ -37,6 +37,9 @@ ImageB Revision Info: k26-smk-v1.04-20250410071436
 - The next `bootfw_update -i` writes to **Image B**, the inactive slot, replacing v1.04. A stays as the fallback.
   v1.04 is the last image known to run PYNQ buffer allocation on this board, so don't overwrite it
   yet. See "Which firmware for Ubuntu 22.04 + PYNQ" below.
+- **2026-11-27:** Requested Boot Image set to **B** with the recovery tool (no flashing).
+  The status above is from before the switch. Replace it once `bootfw_status` confirms the switch.
+  See `docs/changelog.md`.
 
 ### Check the current state
 ```sh

@@ -5,6 +5,50 @@ Details and background: `docs/display.md`.
 
 ---
 
+## 2026-11-27: Requested boot image switched from A (v1.08) to B (v1.04) — verification pending
+
+**Problem:** on boot FW v1.08 (Image A), `pynq.allocate()` fails, so `kr260intro` step 05
+(`sw/step05_linear_layer/linear_layer_test.py`) no longer runs. The same Ubuntu 22.04 install ran
+step 05 fine (`Step 05 PASS`) on v1.04.
+
+**Why:** suspected firmware/OS mismatch. From v1.05 AMD builds boot FW with the SDT flow and
+EDF distro, and v1.07/v1.08 are 2026 "flat" per-kit images. AMD's wiki doesn't list them for
+Ubuntu 22.04 Desktop. The mechanism (CMA/reserved-memory or `zocl` setup) is a guess, not yet
+checked. Details: `docs/firmware-updates.md` → "Which firmware for Ubuntu 22.04 + PYNQ".
+
+**What was done:**
+1. Saved AMD's "Kria SOMs & Starter Kits" wiki page in `references/` (snapshot 2026-11-27).
+2. Started the Boot Image Recovery Tool: PC on J10C, PC static IP 192.168.0.x/24, FWUEN held at
+   power-on, UART on the second USB COM port at 115200 (PuTTY on Windows).
+   - First try: auto-negotiation error on the UART, no link.
+   - **Fixed by forcing the PC's Ethernet adapter to 100 Mbps Full Duplex.**
+   - Then `http://192.168.0.111` loaded. The tool shows only each slot's Bootable flag, not its
+     version. The versions come from the 2026-11-26 `bootfw_status`.
+3. **Requested Boot Image → Image B → Configure.** Nothing was flashed; both slots are unchanged
+   and Bootable.
+
+**To verify (pending):**
+```sh
+sudo xmutil bootfw_status          # expect Requested/Last Booted: Image B, ImageB k26-smk-v1.04-…
+cat /proc/cmdline
+grep -i cma /proc/meminfo
+lsmod | grep zocl
+cd ~/kr260intro/sw/step05_linear_layer && ./run_pynq.sh linear_layer_test.py
+```
+The UART should show `MultiBootOffset: 0x1F0` (Image B) during boot. Also check that a second
+reboot still boots B without `bootfw_update -v`.
+Result: _to be filled in_.
+
+### Is it still needed?
+Keep booting B for as long as v1.08 breaks PYNQ buffer allocation on Ubuntu 22.04. Look again
+after a kernel, PYNQ or boot FW change, or before moving to Ubuntu 24.04.
+
+### Revert
+Recovery tool (same steps, PC at 100 Mbps): **Requested Boot Image → Image A → Configure**,
+then power-cycle. Restore the PC adapter to Auto Negotiation afterwards.
+
+---
+
 ## 2026-11-26: Boot firmware baseline recorded (no change)
 
 `sudo xmutil bootfw_status`: QSPI `XilinxSom_QspiImage-k26-v2.1-06140636`.
