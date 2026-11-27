@@ -70,10 +70,32 @@ Needs root: without it, it fails with `Open Qspi MTD partition failed`.
 
 ### If the board won't boot
 - If the trial image fails, rebooting falls back to the previous slot. Power-cycle it.
-- If both slots are bad, use the **Image Recovery tool** that lives in the QSPI Recovery Image.
-  It is started with a button on the carrier board at power-on and is run from a browser over Ethernet.
-  Look up the exact button and IP in AMD's Kria boot firmware documentation before you need it.
-  This hasn't been tested on this board.
+- If both slots are bad, use the **Boot Image Recovery Tool** (next section).
+
+### Boot Image Recovery Tool
+A web app stored in QSPI, separate from slots A and B. It can upload a `BOOT.BIN` into either
+slot, set each slot's Bootable flag, and choose the **Requested Boot Image**. That last option
+switches slots without flashing anything. Source: AMD wiki snapshot in `references/`, p. 27–28.
+Not yet tried on this board.
+
+1. Connect the PC to the KR260's **J10C** Ethernet port (GEM1). The other three ports don't work
+   for recovery.
+2. Give the PC a static address on 192.168.0.x/24, anything except `.111`.
+3. Optional: open the serial console (micro-USB UART) to watch. The tool prints its IP there.
+4. With the board off, hold the **FWUEN** (firmware update) button and power on.
+5. In a browser, open `http://192.168.0.111`. **Boot Image Status** shows the same A/B
+   information as `bootfw_status`.
+6. To **switch slots**: under **Requested Boot Image**, select the slot you want, leave both
+   images Bootable, and click **Configure**.
+   To **flash**: under **Recover Image**, pick the slot, choose the `BOOT.BIN`, and click
+   **Upload**. That overwrites the slot and marks it Bootable.
+7. Power-cycle without holding the button and let Ubuntu boot.
+8. Check with `sudo xmutil bootfw_status`. The FSBL console line also shows which slot booted:
+   `MultiBootOffset: 0x40` = Image A, `0x1F0` = Image B.
+
+The trial-boot rule (mark good with `bootfw_update -v`) is for images flashed with `xmutil`.
+A slot chosen with **Configure** is expected to stay selected without it. Confirm this with
+`bootfw_status` after a second reboot.
 
 ### Precautions
 - Don't cut power during step 2.
@@ -121,14 +143,16 @@ sudo dmesg | grep -i -e cma -e zocl -e "reserved mem"
 **Recommendation:** use a firmware from before the SDT change. In practice that's v1.04, which is
 proven on this board. If you want a version AMD lists for 22.04 with no caveat, use v1.02.
 1. Don't run `bootfw_update -i` while A (v1.08) is active: it writes to B and destroys v1.04.
-2. Boot Image B (v1.04). `xmutil` has no slot-select command; use the Image Recovery tool.
-   Then mark it good with `sudo xmutil bootfw_update -v`.
+2. Boot Image B (v1.04). `xmutil` has no slot-select command, so use the Boot Image Recovery
+   Tool's **Requested Boot Image → Image B → Configure** (see that section above).
+   Check that a second reboot still boots B.
 3. Rerun step 05. If it passes, the firmware is confirmed as the cause.
 4. Optional: flash v1.02 with `bootfw_update -i`. It goes into A and overwrites v1.08, leaving
    two pre-SDT images.
 5. Before downloading from AMD, check the Ubuntu-packaged firmware:
    `sudo add-apt-repository ppa:ubuntu-xilinx/default && apt show kria-k26-bootfw`.
-   The page doesn't say which version it is.
+   The page doesn't say which version it is. Once installed, the images are in
+   `/usr/lib/firmware/xilinx/bootfw/BOOT-<variation>.bin`.
 
 Alternative: move to Ubuntu 24.04 (supported with 1.02 or later), at the cost of reinstalling
 PYNQ and the workarounds in `docs/changelog.md`.
