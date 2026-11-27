@@ -72,6 +72,40 @@ grep -i cmafree /proc/meminfo
 If the desktop accounts for most of it, the cheapest fix is to run without the desktop when
 you need big buffers.
 
+### Experiment: how much CMA does the desktop use? (planned, not run yet)
+**Question:** would `pynq.allocate()` get noticeably more buffer with the desktop and GUI off?
+
+**Why it's likely (2026-11-27, Image B / v1.04):**
+- X uses the `armsoc` driver (`Xorg.1.log`). It allocates scanout and per-window buffers as GEM
+  objects from the zynqmp DRM device, and on this board those come from CMA. The v1.08 failure log showed
+  X asking for window-sized buffers (`_CREATE_GEM 722x434`).
+- `CmaFree` changes a lot with the same 1000 MB pool and no PYNQ allocations, which fits per-window buffers:
+
+  | When (2026-11-27) | CmaFree |
+  |---|---|
+  | Readings above (desktop + jupyter) | 118–141 MB |
+  | ~17:15 | 645 MB |
+  | ~17:40 | 581 MB |
+
+- `jupyter.service` (Kria-PYNQ) was active during all of these readings, so it's the other suspect.
+
+**How to run it:**
+1. Run from **SSH or the serial console**. Disabling the desktop kills every GNOME terminal, including a
+   Claude Code session running in one.
+2. Optional first step (no sudo): note `CmaFree`, close the browser, VS Code and other windows, then read it again.
+3. Run the steps above (stop jupyter, then `xmutil desktop_disable`) and read `CmaFree` after each one.
+4. Optionally, with the desktop off, run step 05 or a large `pynq.allocate()` to confirm the gain is usable.
+5. Restore: `sudo xmutil desktop_enable`, `sudo systemctl start jupyter`.
+
+Nothing here persists across a reboot. Record the readings here:
+
+| State | CmaFree |
+|---|---|
+| Desktop + jupyter | |
+| Windows closed | |
+| jupyter stopped | |
+| Desktop disabled | |
+
 ## 2. Make the pool bigger (boot command line: confirm before doing)
 The size is set by `cma=1000M` on the kernel command line. On Kria Ubuntu, `flash-kernel`
 builds that into `/boot/firmware/boot.scr.uimg` and regenerates it on every kernel update.
